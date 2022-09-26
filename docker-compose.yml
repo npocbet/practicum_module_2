@@ -1,0 +1,12 @@
+
+
+services:
+    redis: build: path
+    build: redis
+
+    
+
+    elastic:build: path
+
+volumes:
+  - ssffsdfsdfsd
