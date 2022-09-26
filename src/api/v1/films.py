@@ -14,7 +14,9 @@ router = APIRouter() # Объект router, в котором регистрир
 class Film(BaseModel):
     id: str
     title: str
+    
 
+# /api/v1/films?sort=-imdb_rating&page[limit]=50&page[offset]=1
 
 # Внедряем FilmService с помощью Depends(get_film_service) 
 @router.get('/{film_id}', response_model=Film) # Позже подключим роутер к корневому роутеру   /api/v1/film/some_id
@@ -35,3 +37,5 @@ async def film_details(film_id: str, film_service: FilmService = Depends(get_fil
         # вы бы предоставляли клиентам данные, которые им не нужны 
         # и, возможно, данные, которые опасно возвращать
     return Film(id=film.id, title=film.title)
+
+
