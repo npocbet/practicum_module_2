@@ -43,6 +43,10 @@ class Film(UUIDMixin):
         json_dumps = orjson_dumps
 
 
+class AllFilms(BaseModel):
+    all_films: List[Film]
+
+
 class FilmShort(UUIDMixin):
     """
        Поиск, фильтр и отображение фильмов на главной странице.
@@ -135,11 +139,11 @@ class GenrePopularFilm(Genre):
 genres = {'id': 'bccbbbb6-be40-44f5-a025-204bcfcf2667',
                           'name': 'Raphael Sbarge'}
 
-try:
-    g = Genre.parse_obj(genres)
-    print('\ngenres',g)
-except ValidationError as e:
-    print('genre', e.json())
+# try:
+#     g = Genre.parse_obj(genres)
+#     print('\ngenres',g)
+# except ValidationError as e:
+#     print('genre', e.json())
 
 
 pers = {
@@ -150,12 +154,12 @@ pers = {
       }
       
       
-try:
-  person = Person.parse_obj(pers)
-  print('\npers', person)
-  print('\n')
-except ValidationError as ee:
-  print('pers', ee.json())
+# try:
+#   person = Person.parse_obj(pers)
+#   print('\npers', person)
+#   print('\n')
+# except ValidationError as ee:
+#   print('pers', ee.json())
 
 
 
@@ -217,21 +221,21 @@ big = {'_id': '2a090dde-f688-46fe-a9f4-b781a985275e',
   'sort': [9.6]}
 
 
-try:
-    biggest = Film.parse_obj(big.get('_source'))
-    pprint(biggest)
-except ValidationError as v:
-    print('big', v.json())
+# try:
+#     biggest = Film.parse_obj(big.get('_source'))
+#     pprint(biggest)
+# except ValidationError as v:
+#     print('big', v.json())
 
 
 
-class LALALAND(UUIDNameMixin):
-    pass
+# class LALALAND(UUIDNameMixin):
+#     pass
 
-ooo = {'id': '1e8d746d-72d2-4da2-ad20-651154cfb158',
-       'name': 'Michael Gallo'}
-try:
-    lala = LALALAND.parse_obj(ooo)
-    print('\nlalal', lala)
-except ValidationError as vvv:
-    print(vvv.json())
+# ooo = {'id': '1e8d746d-72d2-4da2-ad20-651154cfb158',
+#        'name': 'Michael Gallo'}
+# try:
+#     lala = LALALAND.parse_obj(ooo)
+#     print('\nlalal', lala)
+# except ValidationError as vvv:
+#     print(vvv.json())

@@ -1,37 +1,33 @@
 from typing import Optional
 
 from fastapi import Query
-from pydantic import BaseModel
-
-
-class PaginatedModel(BaseModel):
-    page_num: Optional[int] = Query(default=1,
-                                    ge=1, # greater than or equal
-                                    alias='page[number]',
-                                    description='Page number.')
-
-    page_size: Optional[int] = Query(default=50,
-                                     ge=1, # greater than or equal
-                                     le=100, # less than or equal
-                                     alias='page[size]',
-                                     description='Page size.')
 
 
 class PaginateModel:
     def __init__(
         self,
-        page_size: int
-        | None = Query(10, alias='page[size]', description='Items amount on page', ge=1),
-        page_number: int
-        | None = Query(
-            1, alias='page[number]', description='Page number for pagination', ge=1
-        ),
+        page_size: Optional[int] = Query(default=50,
+                                     ge=1, # greater than or equal
+                                     le=100, # less than or equal
+                                     alias='page[size]',
+                                     description='Items amount on page.'),
+        page_number: Optional[int] = Query(default=1,
+                                    ge=1, # greater than or equal
+                                    alias='page[number]',
+                                    description='Page number for pagination.'),
     ):
         self.page_number = page_number
         self.page_size = page_size
 
+    def paginate_list(self, obj: list):
+        stop = self.page_size * self.page_number
+        start = stop - self.page_size
+        return obj[start:stop]
 
-# @router.get('/',)
-# async def get_list(pagination: PaginateModel = Depends(), ):
-#     pass
-#     # тутможнонработать с_pagination
+    def get_max_page(self, obj: list):
+        value = len(obj) / self.page_size
+        if value % 2 == 0.0:
+            return value
+        else: 
+            return int(value) + 1
+# python -m uvicorn main:app --port=
