@@ -1,7 +1,6 @@
-#from typing import uuid
 import logging
 from pprint import pprint
-from typing import List, Optional
+from typing import Dict, List, Optional
 import orjson
 #from uuid import uuid4
 import uuid
@@ -33,8 +32,8 @@ class Film(UUIDMixin):
     director: List[str]
     actors_names: Optional[List[str]] = []
     writers_names: Optional[List[str]] = []
-    actors: List[UUIDNameMixin] = []
-    writers: List[UUIDNameMixin] = []
+    actors: Optional[List[UUIDNameMixin]] = []
+    writers: Optional[List[UUIDNameMixin]] = []
 
     class Config:
         # Заменяем стандартную работу с json на более быструю
@@ -43,8 +42,46 @@ class Film(UUIDMixin):
         json_dumps = orjson_dumps
 
 
-class AllFilms(BaseModel):
-    all_films: List[Film]
+"""{'_shards': {'failed': 0, 'skipped': 0, 'successful': 1, 'total': 1},
+ 'hits': {'hits': [{'_id': '4ade6055-c805-46ca-83be-9db6a1e8cf89',
+                    '_index': 'movies',
+                    '_score': 6.9716682,
+                    '_source': {'actors': [{'id': 'a43cf757-db8a-4a0e-9e53-df020a9a3b5d',
+                                            'name': 'Dan Palmquist'},
+                                           {'id': 'a996dfcb-8193-4f04-bebd-63b7c346889c',
+                                            'name': 'Shirley Rae'},
+                                           {'id': 'd8f033f7-b9aa-4e75-9d7d-b9117f1c9dff',
+                                            'name': 'James Lantz'},
+                                           {'id': 'f0d96e37-5080-4971-ad5f-b059f6d617a1',
+                                            'name': 'Herk Harvey'}],
+                                'actors_names': ['Dan Palmquist',
+                                                 'Shirley Rae',
+                                                 'James Lantz',
+                                                 'Herk Harvey'],
+                                'description': 'A young Eastern couple fall '
+                                               'heir to a Kansas farm, on '
+                                               'which they must reside for a '
+                                               'certain time in order to '
+                                               'qualify for inheritance. Their '
+                                               'visits to well over a hundred '
+                                               'scenic and historical points '
+                                               'of Kansas lead the couple to '
+                                               'permanent residence there.',
+                                'director': ['Herk Harvey', 'Arthur H. Wolf'],
+                                'genre': ['Short'],
+                                'id': '4ade6055-c805-46ca-83be-9db6a1e8cf89',
+                                'imdb_rating': 5.5,
+                                'title': 'Star 34',
+                                'writers': [],
+                                'writers_names': []},
+                    '_type': '_doc'}],
+          'max_score': 6.9716682,
+          'total': {'relation': 'eq', 'value': 1}},
+ 'timed_out': False,
+ 'took': 2}"""
+
+
+
 
 
 class FilmShort(UUIDMixin):
@@ -53,12 +90,28 @@ class FilmShort(UUIDMixin):
        GET /api/v1/films?sort=-imdb_rating&page[size]=50&page[number]=1
        GET /api/v1/films/search/
        GET /api/v1/persons/<uuid:UUID>/film/ фильмы в которых учавствовал person.
+       Жанр и популярные фильмы в нём. Это просто фильтрация.
+       /api/v1/films?sort=-imdb_rating&filter[genre]=<comedy-uuid>
     """
     title: str
     imdb_rating: Optional[float] = 0.0
+
     class Config:
         json_loads = orjson.loads
         json_dumps = orjson_dumps
+
+
+class AllFilms(BaseModel):
+    results: List[Film]
+
+
+class AllShortOutput(BaseModel):
+    page_size = int
+    page_number = int
+    filter = Optional[dict] = {}
+    sort = Optional[dict] = {}
+    results = Optional[List] = []
+    amount_results = Optional[int] = 0
 
 
 class Person(UUIDNameMixin):
@@ -76,14 +129,12 @@ class Genre(UUIDNameMixin):
     """Данные по конкретному жанру.
        /api/v1/genres/<uuid:UUID>/ 
     """
-    pass
     # name = str
+    class Config:
+        json_loads = orjson.loads
+        json_dumps = orjson_dumps
 
-    # class Config:
-    #     json_loads = orjson.loads
-    #     json_dumps = orjson_dumps
-
-class GenrePopularFilm(Genre):
+class GenrePopularFilms(Genre):
     # TODO выбрать правильный URL
     """
         Популярные фильмы в жанре.
