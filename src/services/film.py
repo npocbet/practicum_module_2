@@ -50,7 +50,7 @@ class FilmService:
         #film = await self._film_from_cache(redis_key)
         film = None # ЗАГЛУШКА
         if not Film: 
-            
+            pass
 
 
 

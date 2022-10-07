@@ -5,7 +5,7 @@ import orjson
 #from uuid import uuid4
 import uuid
 # Используем pydantic для упрощения работы при перегонке данных из json в объекты
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 def orjson_dumps(v, *, default):
@@ -15,6 +15,11 @@ def orjson_dumps(v, *, default):
 
 class UUIDMixin(BaseModel):
     id: uuid.UUID
+    class Config:
+        # Заменяем стандартную работу с json на более быструю
+        # json_encoders = {id: uuid4}
+        json_loads = orjson.loads
+        json_dumps = orjson_dumps
 
 
 class UUIDNameMixin(UUIDMixin):
@@ -27,19 +32,13 @@ class Film(UUIDMixin):
     """
     title: str
     description: Optional[str] = ''
-    imdb_rating: Optional[float] = 0.0
-    genre: Optional[List] = []
+    imdb_rating: Optional[float] = Field(default=0.0, example=88.41)
+    genre: Optional[List[str]] = Field(example=['Comedy', 'Fantasy'])
     director: List[str]
     actors_names: Optional[List[str]] = []
     writers_names: Optional[List[str]] = []
     actors: Optional[List[UUIDNameMixin]] = []
     writers: Optional[List[UUIDNameMixin]] = []
-
-    class Config:
-        # Заменяем стандартную работу с json на более быструю
-        # json_encoders = {id: uuid4}
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
 
 
 """{'_shards': {'failed': 0, 'skipped': 0, 'successful': 1, 'total': 1},
@@ -81,9 +80,6 @@ class Film(UUIDMixin):
  'took': 2}"""
 
 
-
-
-
 class FilmShort(UUIDMixin):
     """
        Поиск, фильтр и отображение фильмов на главной странице.
@@ -94,11 +90,7 @@ class FilmShort(UUIDMixin):
        /api/v1/films?sort=-imdb_rating&filter[genre]=<comedy-uuid>
     """
     title: str
-    imdb_rating: Optional[float] = 0.0
-
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
+    imdb_rating: Optional[float] = Field(default=0.0, example=88.41)
 
 
 class AllFilms(BaseModel):
@@ -106,12 +98,12 @@ class AllFilms(BaseModel):
 
 
 class AllShortOutput(BaseModel):
-    page_size = int
-    page_number = int
-    filter = Optional[dict] = {}
-    sort = Optional[dict] = {}
-    results = Optional[List] = []
-    amount_results = Optional[int] = 0
+    page_size: int
+    page_number: int
+    filter: Optional[dict] = {}
+    sort: Optional[dict] = {}
+    results: Optional[List] = []
+    amount_results: Optional[int] = 0
 
 
 class Person(UUIDNameMixin):
@@ -120,19 +112,13 @@ class Person(UUIDNameMixin):
     role: str
     film_ids: Optional[List[UUIDMixin]] = []
 
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
-
 
 class Genre(UUIDNameMixin):
     """Данные по конкретному жанру.
        /api/v1/genres/<uuid:UUID>/ 
     """
     # name = str
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
+
 
 class GenrePopularFilms(Genre):
     # TODO выбрать правильный URL
