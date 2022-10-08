@@ -1,4 +1,5 @@
 from collections import namedtuple
+from pprint import pprint
 from typing import Optional
 from fastapi import Query
 
@@ -14,9 +15,13 @@ class QueryFilterModel:
     def check_if_filter(self) -> namedtuple:
         filter_selector = {'genre': self.filter_by_genre,
                            'director': self.filter_by_director}
+        print('\n\n\n\n\n')
+        pprint(filter_selector)
         for name, value in filter_selector.items():
+            print(name, value)
             if value is not None:
-                return namedtuple('Filter', name=name, value=value)
+                filter = namedtuple('Filter', ['name', 'value'])
+                return filter(name, value)
         return None
         # return any(self.filter_by_genre, self.filter_by_director)
 

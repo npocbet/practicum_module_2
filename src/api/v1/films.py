@@ -1,36 +1,28 @@
 from http import HTTPStatus
+from pprint import pprint
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
-from models.film import AllShortOutput, Film, AllFilms
+from models.film import AllShortFilms, Film, FilmShort
 from models.paginators import PaginateModel
+from models.query_filters import QueryFilterModel
 
 from services.film import FilmService, get_film_service
 
 
 router = APIRouter() # Объект router, в котором регистрируем обработчики
 
-# Модель ответа API
 # https://pydantic-docs.helpmanual.io
-# У неё есть встроенные механизмы валидации, сериализации и десериализации
-# class Film(BaseModel):
-#     id: Any
-#     title: str
 # /api/v1/films?sort=-imdb_rating&page[limit]=50&page[offset]=1
 
 # Внедряем FilmService с помощью Depends(get_film_service) 
 @router.get('/{film_id}', response_model=Film) # Позже подключим роутер к корневому роутеру   /api/v1/film/some_id
 async def film_details(film_id: str, film_service: FilmService = Depends(get_film_service)) -> Film: 
-    # В сигнатуре функции указываем тип данных, получаемый из адреса запроса (film_id: str) 
-    # И указываем тип возвращаемого объекта — Film
     # "get_persons_films_list-/api/v1/persons/046b28db-3db5-4ba8-8867-136b19624c7a/films-page[number]-1-page[size]-2-sort-id"
     redis_key = f"movies-get-film-/api/v1/films/{film_id}"
     print(redis_key)
     film = await film_service.get_by_id(redis_key, film_id)
     if not film:
-        # Если фильм не найден, отдаём 404 статус
-        print('not film', HTTPStatus.NOT_FOUND)
-        print(HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found'))
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
     #return Film(id=film.id, title=film.title)
     print(type(film))
@@ -41,29 +33,39 @@ async def film_details(film_id: str, film_service: FilmService = Depends(get_fil
 
 # http://127.0.0.1:8104/api/v1/films?filter[genre]=Comedy&page[size]=3&page[number]=6&sort=-imdb_rating&sort=created
 #@router.get('/', response_model=AllFilms)
-@router.get('/')
+@router.get('/', response_model=AllShortFilms)
 async def get_film_list(request: Request,
                         # sort: str = None,
-                        filter_by: str = None,
-                        pagination: PaginateModel = Depends(PaginateModel)
-):
-
+                        filter_by: QueryFilterModel = Depends(QueryFilterModel),
+                        pagination: PaginateModel = Depends(PaginateModel),
+                        film_service: FilmService = Depends(get_film_service)
+) -> AllShortFilms:
     # http://127.0.0.1:8105/api/v1/films/?filter[genre]=Comedy&page[size]=3&page[number]=6&sort=imdb_rating&sort=-created
     # output {"imdb_rating":"asc","created":"desc"}
-    sorts = [v[1] for v in filter(lambda s: s[0] == 'sort', request.query_params.__dict__['_list'])]
-    s_o = {}
-    for s in sorts:
-        if len(s) > 1:
-            if s[0] == '-':
-                s_o[s[1:]] = 'desc'
-            else:
-                s_o[s] = 'asc'
-    return s_o
+    redis_key = f"movies-get-film-/api/v1/films/pnum:{pagination.page_number}-psize:{pagination.page_number}-filter:{filter_by.filter_by_genre}:{filter_by.filter_by_director}"
+    print(redis_key)
+    print(request.url)
+    film, amount = await film_service.get_paginated_movies(redis_key,
+                                      offset=pagination.offset,
+                                      limit=pagination.page_size,
+                                      filter_by=filter_by.get_filter_for_elastic())
+    pprint(film)
+    print(len(film))
+    to_res = [FilmShort(**source['_source']) for source in film]
+    print(len(to_res))
+    print('\n\n\n\n\n\n')
+    pprint(to_res)
+    print('\n\n\n\n\n\n')
+    all = AllShortFilms(page_size=pagination.page_size, page_number=pagination.page_number, results=to_res, amount_results=amount)
+    all.json()
+    return all
 
 
 class SortModel:
     def __init__(self, request: Request):
         pass
+
+
 # http://127.0.0.1:8104/api/v1/films/?filter=horror&page[number]=5&page[size]=21
 # @router.get('/', response_model=AllFilms)
 # async def get_film_list(sort: str = None,

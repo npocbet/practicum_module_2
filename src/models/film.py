@@ -94,15 +94,15 @@ class FilmShort(UUIDMixin):
 
 
 class AllFilms(BaseModel):
-    results: List[Film]
+    results: List[FilmShort]
 
 
-class AllShortOutput(BaseModel):
+class AllShortFilms(BaseModel):
     page_size: int
     page_number: int
     filter: Optional[dict] = {}
     sort: Optional[dict] = {}
-    results: Optional[List] = []
+    results: List[FilmShort]
     amount_results: Optional[int] = 0
 
 

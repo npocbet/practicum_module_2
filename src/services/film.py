@@ -26,14 +26,9 @@ class FilmService:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
             #film = await self._get_film_from_elastic(film_id)
             film = await self.get_movie_by_id(film_id)
-            print('\n\n\n')
-            pprint(film)
-            print(type(film))
-            print('\n\n\n')
             if not film:
                 # Если он отсутствует в Elasticsearch, значит, фильма вообще нет в базе
                 return None
-            print('\n\n\n\n')
             film.json()
             try:
                 pprint(film.json())
@@ -41,25 +36,21 @@ class FilmService:
                 pass
             print('\n\n\n\n')
             # Сохраняем фильм  в кеш
-            #await self._put_film_to_cache(redis_key, film.json())
-            #await self._put_film_to_cache(redis_key, film)
+            #await self._put_result_to_cache(redis_key, film.json())
+            #await self._put_result_to_cache(redis_key, film)
         return film
     
 
-    async def get_paginated_movies(self, offset, limit, filter_by=None, sort=None):
+    async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
         #film = await self._film_from_cache(redis_key)
         film = None # ЗАГЛУШКА
-        if not Film: 
-            pass
-
-
-
-    # async def _get_film_from_elastic(self, film_id: str) -> Optional[Film]:
-    #     try:
-    #         doc = await self.elastic.get('movies', film_id)
-    #     except NotFoundError:
-    #         return None
-    #     return Film(**doc['_source'])
+        # film = await self._film_from_cache()
+        if film is None: 
+            film = await self._get_movies_from_elastic(offset, limit, filter_by, sort)
+            if film is None:
+                return None
+            #await self._put_result_to_cache(redis_key, film)
+        return film
 
     async def get_movie_by_id(self, film_id: str):
         query_body = {
@@ -73,21 +64,21 @@ class FilmService:
         print('\n\n\n')
         pprint(result)
         print('\n\n\n')
-        print('\n')
-        edit = Film(**result['hits']['hits'][0]['_source'])
-
-        newfilm = Film(id=edit.id, title=edit.title, director=edit.director)
-        print('\n', newfilm, '\n')
-        #print(Film(edit))
-        pprint(Film(**result['hits']['hits'][0]['_source']))
+        try:
+            film = Film(**result['hits']['hits'][0].get('_source'))
+        except IndexError:
+            return None
+        pprint(Film(**result['hits']['hits'][0].get('_source')))
         print('\n eto 0 index')
-        return Film(**result['hits']['hits'][0]['_source'])
-
+        #return Film(**result['hits']['hits'][0].get('_source'))
+        return film
+        
     async def _get_movies_from_elastic(self,
                                        offset: int = 0,
                                        limit: int = 10,
                                        filter_by: Dict = None,
                                        sort: Dict = None):
+
         if sort is None:
             sort = {"imdb_rating": "desc"}
 
@@ -99,7 +90,8 @@ class FilmService:
                 "sort": [sort],
             }
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
-            return result['hits']['hits']
+            total_value = result['hits']['total']['value']
+            return result['hits']['hits'], total_value
         else:
             query_body = {
                 "query": {
@@ -114,8 +106,17 @@ class FilmService:
                 "sort": [sort],
             }
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
-            result = [i['_source'] for i in result['hits']['hits']]
-            return result
+            total_value = result['hits']['total']['value']
+            #print(total_value)
+            #pprint(result)
+            # try:
+            #     result = [i['_source'] for i in result['hits']['hits']]
+            # except NotFoundError as nt:
+            #     print('nt', nt)
+            # except Exception as e:
+            #     print(e)
+            #     return None
+            return result['hits']['hits'], total_value
 
 
     async def _film_from_cache(self, redis_key: str) -> Optional[Film]:
@@ -131,18 +132,18 @@ class FilmService:
             film = Film.parse_raw(data)
         except Exception:
             pass
-        finally:
-            film = Film.parse_obj(data)
+        #finally:
+            #film = Film.parse_obj(data)
         return film
 
     #async def _put_film_to_cache(self, film: Film):
-    async def _put_film_to_cache(self, redis_key:str, film: Film): # TODO Проверить модель Film
+    async def _put_result_to_cache(self, redis_key:str, film): # TODO Проверить модель Film
         # Сохраняем данные о фильме, используя команду set
         # Выставляем время жизни кеша — 5 минут
         # https://redis.io/commands/set
         # pydantic позволяет сериализовать модель в json
         #await self.redis.set(redis_key, film.json(), expire=5) # FILM_CACHE_EXPIRE_IN_SECONDS) # ORIGINAL
-        await self.redis.set(redis_key, "film", expire=5) # FILM_CACHE_EXPIRE_IN_SECONDS)
+        await self.redis.set(redis_key, film, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
 # get_film_service — это провайдер FilmService. 
 # С помощью Depends он сообщает, что ему необходимы Redis и Elasticsearch
 # Для их получения вы ранее создали функции-провайдеры в модуле db
