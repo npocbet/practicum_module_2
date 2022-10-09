@@ -39,12 +39,13 @@ class FilmService:
             #await self._put_result_to_cache(redis_key, film.json())
             #await self._put_result_to_cache(redis_key, film)
         return film
-    
+
 
     async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
         #film = await self._film_from_cache(redis_key)
         film = None # ЗАГЛУШКА
         # film = await self._film_from_cache()
+        print('eto filter from pag', filter_by)
         if film is None: 
             film = await self._get_movies_from_elastic(offset, limit, filter_by, sort)
             if film is None:
@@ -61,15 +62,11 @@ class FilmService:
             }
         }
         result = await self.elastic.search(index="movies", body=query_body)
-        print('\n\n\n')
-        pprint(result)
-        print('\n\n\n')
         try:
             film = Film(**result['hits']['hits'][0].get('_source'))
         except IndexError:
             return None
         pprint(Film(**result['hits']['hits'][0].get('_source')))
-        print('\n eto 0 index')
         #return Film(**result['hits']['hits'][0].get('_source'))
         return film
 
@@ -90,8 +87,7 @@ class FilmService:
                 "sort": [sort],
             }
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
-            total_value = result['hits']['total']['value']
-            return result['hits']['hits'], total_value
+            return result
         else:
             query_body = {
                 "query": {

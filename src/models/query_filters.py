@@ -15,20 +15,16 @@ class QueryFilterModel:
     def check_if_filter(self) -> namedtuple:
         filter_selector = {'genre': self.filter_by_genre,
                            'director': self.filter_by_director}
-        print('\n\n\n\n\n')
-        pprint(filter_selector)
         for name, value in filter_selector.items():
-            print(name, value)
             if value is not None:
-                filter = namedtuple('Filter', ['name', 'value'])
-                return filter(name, value)
+                filter_by = namedtuple('Filter', ['name', 'value'])
+                return filter_by(name, value)
         return None
-        # return any(self.filter_by_genre, self.filter_by_director)
 
     def get_filter_for_elastic(self):
         filter_by = self.check_if_filter()
         if filter_by is not None:
-            return {filter_by.name: filter_by.value}
+            return {filter_by.name: filter_value}
         return None
 
     def get_filter_from_mongo_db(self):

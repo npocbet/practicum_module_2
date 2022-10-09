@@ -1,8 +1,7 @@
 from http import HTTPStatus
-from pprint import pp, pprint
+from pprint import pprint
 
 from fastapi import APIRouter, Depends, Request, HTTPException
-from pydantic import BaseModel
 from models.film import AllShortFilms, Film, FilmShort
 from models.paginators import PaginateModel
 from models.query_filters import QueryFilterModel
@@ -20,12 +19,10 @@ router = APIRouter() # Объект router, в котором регистрир
 async def film_details(film_id: str, film_service: FilmService = Depends(get_film_service)) -> Film: 
     # "get_persons_films_list-/api/v1/persons/046b28db-3db5-4ba8-8867-136b19624c7a/films-page[number]-1-page[size]-2-sort-id"
     redis_key = f"movies-get-film-/api/v1/films/{film_id}"
-    print(redis_key)
     film = await film_service.get_by_id(redis_key, film_id)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
     #return Film(id=film.id, title=film.title)
-    print(type(film))
     #film.json()
     #print(film.id)
     return film #Film(id=film.id)
@@ -43,7 +40,6 @@ async def get_film_list(request: Request,
     # http://127.0.0.1:8105/api/v1/films/?filter[genre]=Comedy&page[size]=3&page[number]=6&sort=imdb_rating&sort=-created
     # output {"imdb_rating":"asc","created":"desc"}
     redis_key = f"movies-get-film-/api/v1/films/pnum:{pagination.page_number}-psize:{pagination.page_number}-filter:{filter_by.filter_by_genre}:{filter_by.filter_by_director}"
-
     film = await film_service.get_paginated_movies(redis_key,
                                       offset=pagination.offset,
                                       limit=pagination.page_size,
@@ -51,9 +47,9 @@ async def get_film_list(request: Request,
 
     to_res = [FilmShort(**source['_source']) for source in film['hits']['hits']]
     amount = film['hits']['total']['value']
-    all = AllShortFilms(page_size=pagination.page_size, page_number=pagination.page_number, results=to_res, amount_results=amount)
-    all.json()
-    return all
+    responce = AllShortFilms(page_size=pagination.page_size, page_number=pagination.page_number, results=to_res, amount_results=amount)
+    responce.json()
+    return responce
 
 
 # http://127.0.0.1:8104/api/v1/films/search/?query=Captain films 2. Поиск
@@ -65,6 +61,7 @@ async def search_film_by_query(query: str = None,
                                film_service: FilmService = Depends(get_film_service)
 ):
     #film = await film_service.get_items_by_query()
+    all
     return {}
 
 #python -m uvicorn main:app --port=8106 --reload
