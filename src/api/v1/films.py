@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from pprint import pprint
+from pprint import pp, pprint
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
@@ -44,25 +44,27 @@ async def get_film_list(request: Request,
     # output {"imdb_rating":"asc","created":"desc"}
     redis_key = f"movies-get-film-/api/v1/films/pnum:{pagination.page_number}-psize:{pagination.page_number}-filter:{filter_by.filter_by_genre}:{filter_by.filter_by_director}"
 
-    film, amount = await film_service.get_paginated_movies(redis_key,
+    film = await film_service.get_paginated_movies(redis_key,
                                       offset=pagination.offset,
                                       limit=pagination.page_size,
                                       filter_by=filter_by.get_filter_for_elastic())
 
-    to_res = [FilmShort(**source['_source']) for source in film]
+    to_res = [FilmShort(**source['_source']) for source in film['hits']['hits']]
+    amount = film['hits']['total']['value']
     all = AllShortFilms(page_size=pagination.page_size, page_number=pagination.page_number, results=to_res, amount_results=amount)
     all.json()
     return all
 
 
 # http://127.0.0.1:8104/api/v1/films/search/?query=Captain films 2. Поиск
-@router.get('/search', response_model=AllFilms)
-async def search_film_by_query(query,
+@router.get('/search')
+async def search_film_by_query(query: str = None,
                                sort: str = None,
-                               filter_by: None,
+                               filter_by: QueryFilterModel = Depends(QueryFilterModel),
                                pagination: PaginateModel = Depends(PaginateModel),
                                film_service: FilmService = Depends(get_film_service)
 ):
     #film = await film_service.get_items_by_query()
-    pass
+    return {}
 
+#python -m uvicorn main:app --port=8106 --reload

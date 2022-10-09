@@ -72,7 +72,7 @@ class FilmService:
         print('\n eto 0 index')
         #return Film(**result['hits']['hits'][0].get('_source'))
         return film
-        
+
     async def _get_movies_from_elastic(self,
                                        offset: int = 0,
                                        limit: int = 10,
@@ -106,17 +106,8 @@ class FilmService:
                 "sort": [sort],
             }
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
-            total_value = result['hits']['total']['value']
-            #print(total_value)
-            #pprint(result)
-            # try:
-            #     result = [i['_source'] for i in result['hits']['hits']]
-            # except NotFoundError as nt:
-            #     print('nt', nt)
-            # except Exception as e:
-            #     print(e)
-            #     return None
-            return result['hits']['hits'], total_value
+
+            return result
 
 
     async def _film_from_cache(self, redis_key: str) -> Optional[Film]:
