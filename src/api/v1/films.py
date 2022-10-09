@@ -9,7 +9,8 @@ from models.query_filters import QueryFilterModel
 from services.film import FilmService, get_film_service
 
 
-router = APIRouter() # Объект router, в котором регистрируем обработчики
+router = APIRouter()
+
 
 # https://pydantic-docs.helpmanual.io
 # /api/v1/films?sort=-imdb_rating&page[limit]=50&page[offset]=1
@@ -61,7 +62,6 @@ async def search_film_by_query(query: str = None,
                                film_service: FilmService = Depends(get_film_service)
 ):
     #film = await film_service.get_items_by_query()
-    all
     return {}
 
 #python -m uvicorn main:app --port=8106 --reload

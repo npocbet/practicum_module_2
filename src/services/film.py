@@ -25,16 +25,16 @@ class FilmService:
         if not film:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
             #film = await self._get_film_from_elastic(film_id)
-            film = await self.get_movie_by_id(film_id)
+            film = await self._get_movie_by_id(film_id)
             if not film:
                 # Если он отсутствует в Elasticsearch, значит, фильма вообще нет в базе
                 return None
             film.json()
-            try:
-                pprint(film.json())
-            except Exception:
-                pass
-            print('\n\n\n\n')
+            # try:
+            #     pprint(film.json())
+            # except Exception:
+            #     pass
+            # #print('\n\n\n\n')
             # Сохраняем фильм  в кеш
             #await self._put_result_to_cache(redis_key, film.json())
             #await self._put_result_to_cache(redis_key, film)
@@ -53,7 +53,8 @@ class FilmService:
             #await self._put_result_to_cache(redis_key, film)
         return film
 
-    async def get_movie_by_id(self, film_id: str):
+        
+    async def _get_movie_by_id(self, film_id: str):
         query_body = {
             "query": {
                 "match": {
@@ -66,8 +67,6 @@ class FilmService:
             film = Film(**result['hits']['hits'][0].get('_source'))
         except IndexError:
             return None
-        pprint(Film(**result['hits']['hits'][0].get('_source')))
-        #return Film(**result['hits']['hits'][0].get('_source'))
         return film
 
     async def _get_movies_from_elastic(self,
