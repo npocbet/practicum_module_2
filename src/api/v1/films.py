@@ -53,18 +53,22 @@ async def get_film_list(request: Request,
 
 
 # http://127.0.0.1:8104/api/v1/films/search/?query=Captain films 2. Поиск
-@router.get('/search/')
+@router.get('/search/', response_model=AllShortFilms)
 async def search_film_by_query(query: str,
                                sort: str = None,
                                filter_by: QueryFilterModel = Depends(QueryFilterModel),
                                pagination: PaginateModel = Depends(PaginateModel),
                                film_service: FilmService = Depends(get_film_service),
 ) -> AllShortFilms:
-    redis_key = f"api/v1/films/search:query={query}"
-    film = await film_service.get_items_by_query(redis_key=redis_key, query=query)
+    redis_key = f"api/v1/films/search:query={query}:pnum={pagination.page_number}:psize={pagination.page_size}"
+    film = await film_service.get_items_by_query(redis_key=redis_key, query=query, pagination=pagination)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film by query not found')
-    return {}
+    search_res = [FilmShort(**source['_source']) for source in film['hits']['hits']]
+    amount = film['hits']['total']['value']
+    responce = AllShortFilms(results=search_res, amount_results=amount, page_size=pagination.page_size, page_number=pagination.page_number)
+    responce.json()
+    return responce
 
 # Популярные фильмы в жанре.
 # /api/v1/films/genre_top_films/{genre_id}

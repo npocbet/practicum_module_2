@@ -58,12 +58,11 @@ class FilmService:
         return films
 
     # films/search?query
-    async def get_items_by_query(self, redis_key, query):
+    async def get_items_by_query(self, redis_key, query, pagination):
         #films = await self._film_from_cache(redis_key)
         films = None # ЗАГЛУШКА
         if films is None: 
-            films = await self._get_films_by_search_query_elastic(query)
-            pprint(films)
+            films = await self._get_films_by_search_query_elastic(query, pagination.offset, pagination.limit)
             if films is None:
                 return None
             #await self._put_result_to_cache(redis_key, films)
@@ -76,13 +75,17 @@ class FilmService:
                                                  filter_by: Dict = None,
                                                  sort: Dict = None):
         if filter_by is None:
+            #"api/v1/films/search/?query=Matrix&field=description&field=actors_names
+            default_fields_list = ["title", "description", "writers_names", "actors_names", "director"]
             query_body = {
                 "query": {
-                    "match": query,
-                }
+                    "query_string": {
+                        "fields": default_fields_list,
+                        "query": query
+                    },
+                },
             }
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
-            print('res from elastic', result)
             if len(result['hits']['hits']) == 0:
                 return None
         return result
