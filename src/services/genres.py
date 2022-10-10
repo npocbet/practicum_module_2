@@ -1,4 +1,5 @@
-from pprint import pprint
+import db
+from pprint import pp, pprint
 from functools import lru_cache
 from typing import Dict, Optional
 
@@ -28,8 +29,17 @@ class GenreService:
             #await _put_genre_in_cache(redis_key, genres) # TODO ЗАГЛУШКА
         return genres
 
+    async def get_genre_by_id(self, redis_key, genre_id):
+        genre = None # TODO ЗАГЛУШКА
+        if genre is None: 
+            genre = await self._get_genre_by_id_from_elastic(genre_id)
+            if genre is None:
+                return None
+            #await _put_genre_in_cache(redis_key, genre) # TODO ЗАГЛУШКА
+        return genre
+
     async def _get_genres_from_elastic(self, offset=0, limit=30, filter_by=None, sort=None):
-        # TODO дописать логику 
+        # TODO дописать логику
         if filter_by is None:
             query_body = {
                 "query": {
@@ -38,6 +48,17 @@ class GenreService:
             }
             result = await self.elastic.search(index="genres", body=query_body, from_=offset, size=limit)
             return result
+
+    async def _get_genre_by_id_from_elastic(self, genre_id: str):
+        query_body = {
+            "query": {
+                "match": {
+                    "_id": genre_id
+                }
+            }
+        }
+        genre = await self.elastic.search(index="genres", body=query_body)
+        return genre
 
 # Используем lru_cache-декоратор, чтобы создать объект сервиса в едином экземпляре (синглтона)
 @lru_cache()

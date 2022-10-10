@@ -2,6 +2,7 @@ from http import HTTPStatus
 from pprint import pprint
 
 from fastapi import APIRouter, Depends, Request, HTTPException
+from pydantic import ValidationError
 from models.film import AllGenres, Genre, GenrePopularFilms
 from models.paginators import PaginateModel
 from models.query_filters import QueryFilterModel
@@ -21,10 +22,34 @@ async def get_genres(sort: str = None,
     redis_key = "api/v1/genres"
     genres = await genre_service.get_genres(redis_key)
     if not genres:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
-    
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Genres not found')
+
     genre_name_id = [{"id":genre.get('_id'), "name": genre.get('_source').get("name")} for genre in genres['hits']['hits']]
     output = AllGenres(results=genre_name_id)
     #return {"results": []} # output
     output.json()
+    return output
+
+@router.get('/{genre_id}', response_model=Genre)
+async def get_by_id(genre_id: str, genre_service: GenreService = Depends(get_genre_service)):
+    redis_key = f"api/v1/genres/{genre_id}"
+    genre = await genre_service.get_genre_by_id(redis_key=redis_key, genre_id=genre_id)
+    try:
+        genre_body = genre['hits']['hits'][0]
+    except IndexError as ind_err:
+        pprint({"error": ind_err})
+        genre_body = None
+    if not genre_body:
+       raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'genre with id {genre_id} not found')
+    try:
+        genre_body = {"id": genre_body.get('_id'), "name": genre_body.get('_source').get("name")}
+        output = Genre(**genre_body)
+        output.json()
+    except IndexError as ind_err:
+        pprint({"index error": ind_err})
+    except AttributeError as atr:
+        pprint({"attr error": atr})
+    except ValidationError as val_er:
+        pprint({"val error": val_er})
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'{val_er.errors}')
     return output

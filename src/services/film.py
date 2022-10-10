@@ -40,7 +40,6 @@ class FilmService:
             #await self._put_result_to_cache(redis_key, film)
         return film
 
-
     async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
         #film = await self._film_from_cache(redis_key)
         film = None # ЗАГЛУШКА
@@ -53,7 +52,6 @@ class FilmService:
             #await self._put_result_to_cache(redis_key, film)
         return film
 
-        
     async def _get_movie_by_id(self, film_id: str):
         query_body = {
             "query": {
