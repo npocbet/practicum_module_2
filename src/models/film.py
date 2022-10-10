@@ -67,10 +67,11 @@ class AllShortFilms(BaseModel):
     amount_results: Optional[int] = 0
 
 
-class Person(UUIDNameMixin):
+class Person(UUIDMixin):
     """/api/v1/persons/search/
        Данные по персоне."""
     role: str
+    full_name: str
     film_ids: Optional[List[UUIDMixin]] = []
 
 
