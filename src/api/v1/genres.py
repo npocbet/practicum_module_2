@@ -19,7 +19,7 @@ async def get_genres(sort: str = None,
                      pagination: PaginateModel = Depends(PaginateModel),
                      genre_service: GenreService = Depends(get_genre_service)):
 
-    redis_key = "api/v1/genres"
+    redis_key = f"api/v1/genres:pnum={pagination.page_number}:psize={pagination.page_size}"
     genres = await genre_service.get_genres(redis_key)
     if not genres:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Genres not found')

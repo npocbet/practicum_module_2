@@ -1,3 +1,4 @@
+import json
 import db
 from pprint import pp, pprint
 from functools import lru_cache
@@ -20,13 +21,15 @@ class GenreService:
 
 
     async def get_genres(self, redis_key):
-        #genres = await self._film_from_cache(redis_key)
-        genres = None # TODO ЗАГЛУШКА
+        genres = await self._film_from_cache(redis_key)
+        print('genres from get redis', genres)
+        #genres = None # TODO ЗАГЛУШКА
         if genres is None: 
             genres = await self._get_genres_from_elastic(offset=0, limit=30, filter_by=None, sort=None)
+            print('type from elastic', type(genres))
             if genres is None:
                 return None
-            #await _put_genre_in_cache(redis_key, genres) # TODO ЗАГЛУШКА
+            await self._put_result_to_cache(redis_key, genres) # TODO ЗАГЛУШКА
         return genres
 
     async def get_genre_by_id(self, redis_key, genre_id):
@@ -35,7 +38,7 @@ class GenreService:
             genre = await self._get_genre_by_id_from_elastic(genre_id)
             if genre is None:
                 return None
-            #await _put_genre_in_cache(redis_key, genre) # TODO ЗАГЛУШКА
+            #await _put_result_to_cache(redis_key, genre) # TODO ЗАГЛУШКА
         return genre
 
     async def _get_genres_from_elastic(self, offset=0, limit=30, filter_by=None, sort=None):
@@ -59,6 +62,30 @@ class GenreService:
         }
         genre = await self.elastic.search(index="genres", body=query_body)
         return genre
+
+    async def _put_result_to_cache(self, redis_key, data): # TODO Проверить модель Film
+        # Сохраняем данные о фильме, используя команду set
+        # https://redis.io/commands/set
+        # pydantic позволяет сериализовать модель в json
+        #await self.redis.set(redis_key, film.json(), expire=5) # FILM_CACHE_EXPIRE_IN_SECONDS) # ORIGINAL
+        if data:
+            try:
+                d = json.dumps(data)
+            except Exception as e:
+                print('exep', e)
+            await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
+
+    async def _film_from_cache(self, redis_key: str):
+        data = await self.redis.get(redis_key)
+        out = None
+        try:
+            out = json.loads(data)
+            print(type(out))
+        except Exception as out_e:
+            print('out_e', out_e)
+        if not out:
+            return None
+        return out
 
 # Используем lru_cache-декоратор, чтобы создать объект сервиса в едином экземпляре (синглтона)
 @lru_cache()
