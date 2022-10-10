@@ -19,8 +19,8 @@ class FilmService:
 
     # get_by_id возвращает объект фильма. Он опционален, так как фильм может отсутствовать в базе
     async def get_by_id(self, redis_key: str, film_id: str) -> Optional[Film]:
-        # Пытаемся получить данные из кеша, потому что оно работает быстрее
         #film = await self._film_from_cache(redis_key)
+        print(film_id)
         film = None
         if not film:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
@@ -30,11 +30,6 @@ class FilmService:
                 # Если он отсутствует в Elasticsearch, значит, фильма вообще нет в базе
                 return None
             film.json()
-            # try:
-            #     pprint(film.json())
-            # except Exception:
-            #     pass
-            # #print('\n\n\n\n')
             # Сохраняем фильм  в кеш
             #await self._put_result_to_cache(redis_key, film.json())
             #await self._put_result_to_cache(redis_key, film)
@@ -52,6 +47,46 @@ class FilmService:
             #await self._put_result_to_cache(redis_key, film)
         return film
 
+    async def get_top_films_by_genre_id(self, redis_key, genre_id):
+        #films = await self._film_from_cache(redis_key)
+        films = None # ЗАГЛУШКА
+        if films is None: 
+            films = await self._get_films_by_genre_id_from_elastic(genre_id)
+            if films is None:
+                return None
+            #await self._put_result_to_cache(redis_key, film)
+        return films
+
+    # films/search?query
+    async def get_items_by_query(self, redis_key, query):
+        #films = await self._film_from_cache(redis_key)
+        films = None # ЗАГЛУШКА
+        if films is None: 
+            films = await self._get_films_by_search_query_elastic(query)
+            pprint(films)
+            if films is None:
+                return None
+            #await self._put_result_to_cache(redis_key, films)
+        return films
+
+    async def _get_films_by_search_query_elastic(self,
+                                                 query: str,
+                                                 offset: int = 0,
+                                                 limit: int = 10,
+                                                 filter_by: Dict = None,
+                                                 sort: Dict = None):
+        if filter_by is None:
+            query_body = {
+                "query": {
+                    "match": query,
+                }
+            }
+            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            print('res from elastic', result)
+            if len(result['hits']['hits']) == 0:
+                return None
+        return result
+
     async def _get_movie_by_id(self, film_id: str):
         query_body = {
             "query": {
@@ -66,6 +101,19 @@ class FilmService:
         except IndexError:
             return None
         return film
+
+    async def _get_films_by_genre_id_from_elastic(self, genre_id, offset=0, limit=15, filter_by=None, sort=None):
+        query_body = {
+            "query": {
+                "match": {
+                    "genres": genre_id
+                }
+            }
+        }
+        result = await self.elastic.search(index="movies", body=query_body)
+        if len(result['hits']['hits']) == 0:
+            return None
+        return result
 
     async def _get_movies_from_elastic(self,
                                        offset: int = 0,
@@ -101,7 +149,6 @@ class FilmService:
             result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
 
             return result
-
 
     async def _film_from_cache(self, redis_key: str) -> Optional[Film]:
         # Пытаемся получить данные о фильме из кеша, используя команду get
