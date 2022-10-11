@@ -94,12 +94,14 @@ class FilmService:
         return result
 
     async def _get_films_by_genre_id_from_elastic(self, genre_id, offset=0, limit=15, filter_by=None, sort=None):
+        sort = {"imdb_rating": "desc"}
         query_body = {
             "query": {
                 "match": {
-                    "genres": genre_id
-                }
-            }
+                    "genre": genre_id
+                    }
+                },
+            "sort": [sort]
         }
         result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
         if len(result['hits']['hits']) == 0:

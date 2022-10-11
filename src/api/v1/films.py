@@ -56,7 +56,7 @@ async def search_film_by_query(query: str,
 
 # Популярные фильмы в жанре.
 # /api/v1/films/genre_top_films/{genre_id}
-@router.get('/genre_top_films/{genre_id}', response_model=FilmShort)
+@router.get('/genre_top_films/{genre_id}', response_model=AllShortFilms)
 async def get_top_films_by_genre(genre_id: str,
                                  pagination: PaginateModel = Depends(PaginateModel),
                                  film_service: FilmService = Depends(get_film_service)
@@ -66,6 +66,7 @@ async def get_top_films_by_genre(genre_id: str,
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='top-films by genre not found')
     to_res = [FilmShort(**source['_source']) for source in films['hits']['hits']]
-    return to_res
+    result = AllShortFilms(results=to_res, page_number=pagination.page_number, page_size=pagination.page_size)
+    return result
 
 # python -m uvicorn main:app --port=8106 --reload
