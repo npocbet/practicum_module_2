@@ -62,7 +62,7 @@ async def get_top_films_by_genre(genre_id: str,
                                  film_service: FilmService = Depends(get_film_service)
 ):
     redis_key = f"api/v1/films/genre_top_films/{genre_id}:pnum:{pagination.page_number}-psize:{pagination.page_size}"
-    films = await film_service.get_top_films_by_genre_id(redis_key=redis_key, genre_id=genre_id)
+    films = await film_service.get_top_films_by_genre_id(redis_key=redis_key, genre_id=genre_id, pagination=pagination)
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='top-films by genre not found')
     to_res = [FilmShort(**source['_source']) for source in films['hits']['hits']]

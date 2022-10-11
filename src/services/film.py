@@ -39,10 +39,10 @@ class FilmService:
             await self._put_result_to_cache(redis_key, film)
         return film
 
-    async def get_top_films_by_genre_id(self, redis_key, genre_id):
+    async def get_top_films_by_genre_id(self, redis_key, genre_id, pagination):
         films = await self._film_from_cache(redis_key)
         if films is None:
-            films = await self._get_films_by_genre_id_from_elastic(genre_id)
+            films = await self._get_films_by_genre_id_from_elastic(genre_id, pagination.offset, pagination.limit)
             if films is None:
                 return None
             await self._put_result_to_cache(redis_key, films)
