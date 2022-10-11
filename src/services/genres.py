@@ -29,20 +29,19 @@ class GenreService:
             print('type from elastic', type(genres))
             if genres is None:
                 return None
-            await self._put_result_to_cache(redis_key, genres) # TODO ЗАГЛУШКА
+            await self._put_result_to_cache(redis_key, genres)
         return genres
 
     async def get_genre_by_id(self, redis_key, genre_id):
-        genre = None # TODO ЗАГЛУШКА
+        genre = await self._film_from_cache(redis_key)
         if genre is None: 
             genre = await self._get_genre_by_id_from_elastic(genre_id)
             if genre is None:
                 return None
-            #await _put_result_to_cache(redis_key, genre) # TODO ЗАГЛУШКА
+            await self._put_result_to_cache(redis_key, genre)
         return genre
 
     async def _get_genres_from_elastic(self, offset=0, limit=30, filter_by=None, sort=None):
-        # TODO дописать логику
         if filter_by is None:
             query_body = {
                 "query": {
