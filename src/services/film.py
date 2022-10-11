@@ -1,5 +1,3 @@
-import imp
-from pprint import pprint
 from functools import lru_cache
 from typing import Dict, Optional
 import json
@@ -21,7 +19,6 @@ class FilmService:
     # get_by_id возвращает объект фильма. Он опционален, так как фильм может отсутствовать в базе
     async def get_by_id(self, redis_key: str, film_id: str) -> Optional[Film]:
         film = await self._film_from_cache(redis_key)
-        print(film_id, film)
         if not film:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
             #film = await self._get_film_from_elastic(film_id)
@@ -35,7 +32,6 @@ class FilmService:
 
     async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
         film = await self._film_from_cache(redis_key)
-        print('eto filter from pag', filter_by, film)
         if film is None: 
             film = await self._get_movies_from_elastic(offset, limit, filter_by, sort)
             if film is None:
@@ -52,7 +48,6 @@ class FilmService:
             await self._put_result_to_cache(redis_key, films)
         return films
 
-    # films/search/?query
     async def get_items_by_query(self, redis_key, query, pagination):
         films = await self._film_from_cache(redis_key)
         if films is None:
@@ -69,7 +64,6 @@ class FilmService:
                                                  filter_by: Dict = None,
                                                  sort: Dict = None):
         if filter_by is None:
-            #"api/v1/films/search/?query=Matrix&field=description&field=actors_names
             default_fields_list = ["title", "description", "writers_names", "actors_names", "director"]
             query_body = {
                 "query": {

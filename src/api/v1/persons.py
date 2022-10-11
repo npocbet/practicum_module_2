@@ -30,8 +30,6 @@ async def get_person_film_list(person_id: str,
                                                        person_id=person_id)
 
     to_res = [FilmShort(**source['_source']) for source in film]
-    # with open(file='log.json', mode='w') as f:
-    #     f.write(json.dumps(to_res))
     amount = len(to_res)
     responce = AllShortFilms(page_size=pagination.page_size, page_number=pagination.page_number, results=to_res,
                              amount_results=amount)

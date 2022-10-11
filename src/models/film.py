@@ -82,8 +82,6 @@ class Genre(UUIDNameMixin):
     """Данные по конкретному жанру.
        /api/v1/genres/<uuid:UUID>/ 
     """
-    # name = str
-
 
 class AllGenres(BaseModel):
     results: List[Genre] = []
@@ -94,7 +92,6 @@ class AllGenres(BaseModel):
 
 
 class GenrePopularFilms(Genre):
-    # TODO выбрать правильный URL
     """
         Популярные фильмы в жанре.
         /api/v1/films...
@@ -104,35 +101,3 @@ class GenrePopularFilms(Genre):
     class Config:
         json_loads = orjson.loads
         json_dumps = orjson_dumps
-
-
-genres = {'id': 'bccbbbb6-be40-44f5-a025-204bcfcf2667',
-          'name': 'Raphael Sbarge'}
-
-# try:
-#     g = Genre.parse_obj(genres)
-#     print('\ngenres',g)
-# except ValidationError as e:
-#     print('genre', e.json())
-
-
-pers = {
-    "id": "58060969-dce4-4a19-a94f-381d263e554c",
-    "name": "str",
-    "role": "str",
-    "film_ids": [{"id": "58060969-dce4-4a19-a94f-381d263e554c"}]
-}
-
-# try:
-#   person = Person.parse_obj(pers)
-#   print('\npers', person)
-#   print('\n')
-# except ValidationError as ee:
-#   print('pers', ee.json())
-
-
-# try:
-#     biggest = Film.parse_obj(big.get('_source'))
-#     pprint(biggest)
-# except ValidationError as v:
-#     print('big', v.json())
