@@ -1,12 +1,36 @@
-
-
+version: "3.7"
+networks:
+  internal:
+    # Use a custom driver
+    driver: bridge
 services:
-    redis: build: path
-    build: redis
-
-    
-
-    elastic:build: path
-
-volumes:
-  - ssffsdfsdfsd
+  app:
+    build: AsyncApi
+    ports:
+      - "8106:8106"
+    depends_on:
+      - db
+    networks:
+      internal:
+  db:
+    image: postgres:14.5-alpine
+    volumes:
+      - ./docker-volumes/:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=&{DB_PASSWORD}
+      - POSTGRES_DB=&{DB_NAME}
+    networks:
+      internal:
+  es01:
+    image: elasticsearch:7.7.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - http.compression=true
+      - http.max_content_length=500mb
+      - xpack.security.enabled=false
+    depends_on:
+      - db
+    networks:
+      internal:
