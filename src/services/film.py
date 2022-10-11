@@ -1,7 +1,8 @@
+import imp
 from pprint import pprint
 from functools import lru_cache
 from typing import Dict, Optional
-
+import json
 from aioredis import Redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -19,9 +20,8 @@ class FilmService:
 
     # get_by_id возвращает объект фильма. Он опционален, так как фильм может отсутствовать в базе
     async def get_by_id(self, redis_key: str, film_id: str) -> Optional[Film]:
-        #film = await self._film_from_cache(redis_key)
-        print(film_id)
-        film = None
+        film = await self._film_from_cache(redis_key)
+        print(film_id, film)
         if not film:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
             #film = await self._get_film_from_elastic(film_id)
@@ -29,43 +29,37 @@ class FilmService:
             if not film:
                 # Если он отсутствует в Elasticsearch, значит, фильма вообще нет в базе
                 return None
-            film.json()
             # Сохраняем фильм  в кеш
-            #await self._put_result_to_cache(redis_key, film.json())
-            #await self._put_result_to_cache(redis_key, film)
+            await self._put_result_to_cache(redis_key, film)
         return film
 
     async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
-        #film = await self._film_from_cache(redis_key)
-        film = None # ЗАГЛУШКА
-        # film = await self._film_from_cache()
-        print('eto filter from pag', filter_by)
+        film = await self._film_from_cache(redis_key)
+        print('eto filter from pag', filter_by, film)
         if film is None: 
             film = await self._get_movies_from_elastic(offset, limit, filter_by, sort)
             if film is None:
                 return None
-            #await self._put_result_to_cache(redis_key, film)
+            await self._put_result_to_cache(redis_key, film)
         return film
 
     async def get_top_films_by_genre_id(self, redis_key, genre_id):
-        #films = await self._film_from_cache(redis_key)
-        films = None # ЗАГЛУШКА
-        if films is None: 
+        films = await self._film_from_cache(redis_key)
+        if films is None:
             films = await self._get_films_by_genre_id_from_elastic(genre_id)
             if films is None:
                 return None
-            #await self._put_result_to_cache(redis_key, film)
+            await self._put_result_to_cache(redis_key, films)
         return films
 
-    # films/search?query
+    # films/search/?query
     async def get_items_by_query(self, redis_key, query, pagination):
-        #films = await self._film_from_cache(redis_key)
-        films = None # ЗАГЛУШКА
-        if films is None: 
+        films = await self._film_from_cache(redis_key)
+        if films is None:
             films = await self._get_films_by_search_query_elastic(query, pagination.offset, pagination.limit)
             if films is None:
                 return None
-            #await self._put_result_to_cache(redis_key, films)
+            await self._put_result_to_cache(redis_key, films)
         return films
 
     async def _get_films_by_search_query_elastic(self,
@@ -100,10 +94,10 @@ class FilmService:
         }
         result = await self.elastic.search(index="movies", body=query_body)
         try:
-            film = Film(**result['hits']['hits'][0].get('_source'))
+            film = result['hits']['hits'][0]
         except IndexError:
             return None
-        return film
+        return result
 
     async def _get_films_by_genre_id_from_elastic(self, genre_id, offset=0, limit=15, filter_by=None, sort=None):
         query_body = {
@@ -113,7 +107,7 @@ class FilmService:
                 }
             }
         }
-        result = await self.elastic.search(index="movies", body=query_body)
+        result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
         if len(result['hits']['hits']) == 0:
             return None
         return result
@@ -153,31 +147,29 @@ class FilmService:
 
             return result
 
-    async def _film_from_cache(self, redis_key: str) -> Optional[Film]:
-        # Пытаемся получить данные о фильме из кеша, используя команду get
-        # https://redis.io/commands/get
+    async def _film_from_cache(self, redis_key: str):
         data = await self.redis.get(redis_key)
-        print('data:', data)
-        if not data:
-            return None
-
-        # pydantic предоставляет удобное API для создания объекта моделей из json
+        out = None
         try:
-            film = Film.parse_raw(data)
-        except Exception:
-            pass
-        #finally:
-            #film = Film.parse_obj(data)
-        return film
+            out = json.loads(data)
+        except Exception as out_e:
+            print('out_e', out_e)
+        if not out:
+            return None
+        return out
 
-    #async def _put_film_to_cache(self, film: Film):
-    async def _put_result_to_cache(self, redis_key:str, film): # TODO Проверить модель Film
+    async def _put_result_to_cache(self, redis_key, data):
         # Сохраняем данные о фильме, используя команду set
-        # Выставляем время жизни кеша — 5 минут
         # https://redis.io/commands/set
         # pydantic позволяет сериализовать модель в json
-        #await self.redis.set(redis_key, film.json(), expire=5) # FILM_CACHE_EXPIRE_IN_SECONDS) # ORIGINAL
-        await self.redis.set(redis_key, film, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
+        if data:
+            try:
+                d = json.dumps(data)
+                await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
+            except Exception as e:
+                print('exep', e)
+            # await self.redis.set(redis_key, value=data, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
+
 # get_film_service — это провайдер FilmService. 
 # С помощью Depends он сообщает, что ему необходимы Redis и Elasticsearch
 # Для их получения вы ранее создали функции-провайдеры в модуле db

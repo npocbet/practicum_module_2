@@ -26,8 +26,6 @@ async def get_genres(sort: str = None,
 
     genre_name_id = [{"id":genre.get('_id'), "name": genre.get('_source').get("name")} for genre in genres['hits']['hits']]
     output = AllGenres(results=genre_name_id)
-    #return {"results": []} # output
-    output.json()
     return output
 
 @router.get('/{genre_id}', response_model=Genre)
@@ -44,11 +42,6 @@ async def get_by_id(genre_id: str, genre_service: GenreService = Depends(get_gen
     try:
         genre_body = {"id": genre_body.get('_id'), "name": genre_body.get('_source').get("name")}
         output = Genre(**genre_body)
-        output.json()
-    except IndexError as ind_err:
-        pprint({"index error": ind_err})
-    except AttributeError as atr:
-        pprint({"attr error": atr})
     except ValidationError as val_er:
         pprint({"val error": val_er})
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'{val_er.errors}')
