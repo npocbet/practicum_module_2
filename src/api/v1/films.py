@@ -66,7 +66,8 @@ async def get_top_films_by_genre(genre_id: str,
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='top-films by genre not found')
     to_res = [FilmShort(**source['_source']) for source in films['hits']['hits']]
-    result = AllShortFilms(results=to_res, page_number=pagination.page_number, page_size=pagination.page_size)
+    amount_match = film['hits']['total']['value']
+    result = AllShortFilms(results=to_res, page_number=pagination.page_number, page_size=pagination.page_size, amount_results=amount_match)
     return result
 
 # python -m uvicorn main:app --port=8106 --reload
