@@ -212,6 +212,7 @@ class ETL:
             yield {
                 "_index": "genres",
                 "_id": cur_el['id'],
+                "id": cur_el['id'],
                 "name": cur_el['name']
             }
 
@@ -226,6 +227,7 @@ class ETL:
             yield {
                 "_index": "persons",
                 "_id": cur_el['id'],
+                "id": cur_el['id'],
                 "full_name": cur_el['full_name']
             }
 

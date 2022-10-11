@@ -2,7 +2,7 @@ import logging
 from pprint import pprint
 from typing import Dict, List, Optional
 import orjson
-#from uuid import uuid4
+# from uuid import uuid4
 import uuid
 # Используем pydantic для упрощения работы при перегонке данных из json в объекты
 from pydantic import BaseModel, Field, ValidationError
@@ -15,6 +15,7 @@ def orjson_dumps(v, *, default):
 
 class UUIDMixin(BaseModel):
     id: uuid.UUID
+
     class Config:
         # Заменяем стандартную работу с json на более быструю
         # json_encoders = {id: uuid4}
@@ -67,19 +68,22 @@ class AllShortFilms(BaseModel):
     amount_results: Optional[int] = 0
 
 
-class Person(UUIDMixin):
-    """/api/v1/persons/search/
-       Данные по персоне."""
-    role: str
-    full_name: str
-    film_ids: Optional[List[UUIDMixin]] = []
+class ByRoles(BaseModel):
+    roles: Dict
 
+
+class Person(UUIDMixin, ByRoles):
+    full_name: str
+
+class Persons(BaseModel):
+    results: List[Person] = []
 
 class Genre(UUIDNameMixin):
     """Данные по конкретному жанру.
        /api/v1/genres/<uuid:UUID>/ 
     """
     # name = str
+
 
 class AllGenres(BaseModel):
     results: List[Genre] = []
@@ -103,7 +107,7 @@ class GenrePopularFilms(Genre):
 
 
 genres = {'id': 'bccbbbb6-be40-44f5-a025-204bcfcf2667',
-                          'name': 'Raphael Sbarge'}
+          'name': 'Raphael Sbarge'}
 
 # try:
 #     g = Genre.parse_obj(genres)
@@ -113,11 +117,11 @@ genres = {'id': 'bccbbbb6-be40-44f5-a025-204bcfcf2667',
 
 
 pers = {
-  "id": "58060969-dce4-4a19-a94f-381d263e554c",
-  "name": "str",
-      "role": "str",
-      "film_ids": [{"id":"58060969-dce4-4a19-a94f-381d263e554c"}]
-      }
+    "id": "58060969-dce4-4a19-a94f-381d263e554c",
+    "name": "str",
+    "role": "str",
+    "film_ids": [{"id": "58060969-dce4-4a19-a94f-381d263e554c"}]
+}
 
 # try:
 #   person = Person.parse_obj(pers)
