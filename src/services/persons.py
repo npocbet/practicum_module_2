@@ -155,6 +155,28 @@ class PersonService:
             return None
         return result['hits']['hits']
 
+    async def _film_from_cache(self, redis_key: str):
+        data = await self.redis.get(redis_key)
+        out = None
+        try:
+            out = json.loads(data)
+        except Exception as out_e:
+            print('out_e', out_e)
+        if not out:
+            return None
+        return out
+
+    async def _put_result_to_cache(self, redis_key, data): # TODO Проверить модель Film
+        # Сохраняем данные о фильме, используя команду set
+        # https://redis.io/commands/set
+        # pydantic позволяет сериализовать модель в json
+        if data:
+            try:
+                d = json.dumps(data)
+                await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
+            except Exception as e:
+                print('exep', e)
+
 
 @lru_cache()
 def get_persons_service(

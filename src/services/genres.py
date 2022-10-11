@@ -23,7 +23,6 @@ class GenreService:
     async def get_genres(self, redis_key):
         genres = await self._film_from_cache(redis_key)
         print('genres from get redis', genres)
-        #genres = None # TODO ЗАГЛУШКА
         if genres is None: 
             genres = await self._get_genres_from_elastic(offset=0, limit=30, filter_by=None, sort=None)
             print('type from elastic', type(genres))
@@ -66,20 +65,18 @@ class GenreService:
         # Сохраняем данные о фильме, используя команду set
         # https://redis.io/commands/set
         # pydantic позволяет сериализовать модель в json
-        #await self.redis.set(redis_key, film.json(), expire=5) # FILM_CACHE_EXPIRE_IN_SECONDS) # ORIGINAL
         if data:
             try:
                 d = json.dumps(data)
+                await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
             except Exception as e:
                 print('exep', e)
-            await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
 
     async def _film_from_cache(self, redis_key: str):
         data = await self.redis.get(redis_key)
         out = None
         try:
             out = json.loads(data)
-            print(type(out))
         except Exception as out_e:
             print('out_e', out_e)
         if not out:

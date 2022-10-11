@@ -168,7 +168,6 @@ class FilmService:
                 await self.redis.set(redis_key, value=d, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
             except Exception as e:
                 print('exep', e)
-            # await self.redis.set(redis_key, value=data, expire=FILM_CACHE_EXPIRE_IN_SECONDS)
 
 # get_film_service — это провайдер FilmService. 
 # С помощью Depends он сообщает, что ему необходимы Redis и Elasticsearch

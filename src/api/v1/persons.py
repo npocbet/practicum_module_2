@@ -25,7 +25,7 @@ async def get_person_film_list(person_id: str,
                                person_service: PersonService = Depends(get_persons_service)
                                ) -> AllShortFilms:
     # TODO: актуализировать
-    redis_key = f"movies-get-film-/api/v1/films/pnum:{pagination.page_number}-psize:{pagination.page_number}"
+    redis_key = f"movies-get-film-/api/v1/films/pnum:{pagination.page_number}-psize:{pagination.page_size}"
     film = await person_service.get_films_by_person_id(redis_key,
                                                        offset=pagination.offset,
                                                        limit=pagination.page_size,
