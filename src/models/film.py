@@ -13,14 +13,18 @@ def orjson_dumps(v, *, default):
     return orjson.dumps(v, default=default).decode()
 
 
-class UUIDMixin(BaseModel):
-    id: uuid.UUID
-
+class BaseOrjsonModel(BaseModel):
     class Config:
         # Заменяем стандартную работу с json на более быструю
         # json_encoders = {id: uuid4}
         json_loads = orjson.loads
         json_dumps = orjson_dumps
+        
+
+
+
+class UUIDMixin(BaseOrjsonModel):
+    id: uuid.UUID
 
 
 class UUIDNameMixin(UUIDMixin):
@@ -55,11 +59,11 @@ class FilmShort(UUIDMixin):
     imdb_rating: Optional[float] = Field(default=0.0, example=88.41)
 
 
-class AllFilms(BaseModel):
+class AllFilms(BaseOrjsonModel):
     results: List[FilmShort]
 
 
-class AllShortFilms(BaseModel):
+class AllShortFilms(BaseOrjsonModel):
     page_size: int
     page_number: int
     filter: Optional[dict] = {}
@@ -68,14 +72,14 @@ class AllShortFilms(BaseModel):
     amount_results: Optional[int] = 0
 
 
-class ByRoles(BaseModel):
+class ByRoles(BaseOrjsonModel):
     roles: Dict
 
 
 class Person(UUIDMixin, ByRoles):
     full_name: str
 
-class Persons(BaseModel):
+class Persons(BaseOrjsonModel):
     results: List[Person] = []
 
 class Genre(UUIDNameMixin):
@@ -83,12 +87,8 @@ class Genre(UUIDNameMixin):
        /api/v1/genres/<uuid:UUID>/ 
     """
 
-class AllGenres(BaseModel):
+class AllGenres(BaseOrjsonModel):
     results: List[Genre] = []
-
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
 
 
 class GenrePopularFilms(Genre):
@@ -97,7 +97,3 @@ class GenrePopularFilms(Genre):
         /api/v1/films...
     """
     top_films: List[FilmShort]
-
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
