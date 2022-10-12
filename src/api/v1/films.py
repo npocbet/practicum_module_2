@@ -72,5 +72,3 @@ async def get_top_films_by_genre(genre_id: str,
     amount_match = films['hits']['total']['value']
     result = AllShortFilms(results=to_res, page_number=pagination.page_number, page_size=pagination.page_size, amount_results=amount_match)
     return result
-
-# python -m uvicorn main:app --port=8106 --reload

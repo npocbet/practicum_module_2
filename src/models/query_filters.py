@@ -1,5 +1,4 @@
 from collections import namedtuple
-from pprint import pprint
 from typing import Optional
 from fastapi import Query
 

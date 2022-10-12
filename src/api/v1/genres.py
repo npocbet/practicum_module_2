@@ -1,9 +1,9 @@
 from http import HTTPStatus
 from pprint import pprint
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
-from models.film import AllGenres, Genre, GenrePopularFilms
+from models.film import AllGenres, Genre
 from models.paginators import PaginateModel
 from models.query_filters import QueryFilterModel
 

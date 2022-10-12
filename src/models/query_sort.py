@@ -20,5 +20,3 @@ async def get_film_list(request: Request,
             else:
                 s_o[s] = 'asc'
     return s_o
-
-# TODO EXAMPLE

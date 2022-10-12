@@ -33,5 +33,3 @@ class PaginateModel:
             return value
         else:
             return int(value) + 1
-# python -m uvicorn main:app --port=
-# python -m uvicorn main:app --port=8106 --reload

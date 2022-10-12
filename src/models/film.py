@@ -1,11 +1,7 @@
-import logging
-from pprint import pprint
 from typing import Dict, List, Optional
 import orjson
-# from uuid import uuid4
 import uuid
-# Используем pydantic для упрощения работы при перегонке данных из json в объекты
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 
 def orjson_dumps(v, *, default):
@@ -19,8 +15,6 @@ class BaseOrjsonModel(BaseModel):
         # json_encoders = {id: uuid4}
         json_loads = orjson.loads
         json_dumps = orjson_dumps
-        
-
 
 
 class UUIDMixin(BaseOrjsonModel):
