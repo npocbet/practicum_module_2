@@ -6,9 +6,10 @@ from services.persons import PersonService, get_persons_service
 
 router = APIRouter()
 
-# http://localhost:8106/api/v1/persons/00395304-dd52-4c7b-be0d-c2cd7a495684
-@router.get('/{person_id}', response_model=Person)
+
+@router.get('/{person_id}', response_model=Person, summary="Get info about Person")
 async def person_details(person_id: str, person_service: PersonService = Depends(get_persons_service)) -> Person:
+    """return info about single person"""
     redis_key = f"movies-get-film-/api/v1/persons/{person_id}"
     person = await person_service.get_person_by_id(redis_key, person_id)
 
@@ -17,12 +18,13 @@ async def person_details(person_id: str, person_service: PersonService = Depends
     return Person(**person)
 
 # http://localhost:8106/api/v1/persons/00395304-dd52-4c7b-be0d-c2cd7a495684/film/
-@router.get('/{person_id}/film/', response_model=AllShortFilms)
+@router.get('/{person_id}/film/', response_model=AllShortFilms, summary="Get person films")
 async def get_person_film_list(person_id: str,
                                # sort: str = None,
                                pagination: PaginateModel = Depends(PaginateModel),
                                person_service: PersonService = Depends(get_persons_service)
                                ) -> AllShortFilms:
+    """returns all person roles and films by role"""
     redis_key = f"movies-get-film-/api/v1/persons/{person_id}/film/"
     film = await person_service.get_films_by_person_id(redis_key,
                                                        offset=pagination.offset,
@@ -37,11 +39,15 @@ async def get_person_film_list(person_id: str,
     return responce
 
 # http://localhost:8106/api/v1/persons/search/?query=Mary
-@router.get('/search/', response_model=Persons)
+@router.get('/search/', response_model=Persons, summary="Search match Persons")
 async def search_persons_by_query(query: str,
                                   pagination: PaginateModel = Depends(PaginateModel),
                                   person_service: PersonService = Depends(get_persons_service),
                                   ) -> Persons:
+    """
+        Returns list of matched persons from query\n
+        example: persons/?query=Tom Cruse
+    """
     redis_key = f"api/v1/persons/search:query={query}:pnum={pagination.page_number}:psize={pagination.page_size}"
     person = await person_service.search_person_by_query(redis_key=redis_key, query=query, pagination=pagination)
     if not person:

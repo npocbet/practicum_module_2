@@ -13,12 +13,12 @@ from services.genres import GenreService, get_genre_service
 router = APIRouter()
 
 
-@router.get('', response_model=AllGenres)  #/api/openapi
+@router.get('', response_model=AllGenres, summary="Returns all Genres")
 async def get_genres(sort: str = None,
                      filter_by: QueryFilterModel = Depends(QueryFilterModel),
                      pagination: PaginateModel = Depends(PaginateModel),
                      genre_service: GenreService = Depends(get_genre_service)):
-
+    """returns genres with names and genre.uuid"""
     redis_key = f"api/v1/genres:pnum={pagination.page_number}:psize={pagination.page_size}"
     genres = await genre_service.get_genres(redis_key)
     if not genres:
@@ -28,8 +28,9 @@ async def get_genres(sort: str = None,
     output = AllGenres(results=genre_name_id)
     return output
 
-@router.get('/{genre_id}', response_model=Genre)
+@router.get('/{genre_id}', response_model=Genre, summary="Get Genre")
 async def get_by_id(genre_id: str, genre_service: GenreService = Depends(get_genre_service)):
+    """returns info about single genre"""
     redis_key = f"api/v1/genres/{genre_id}"
     genre = await genre_service.get_genre_by_id(redis_key=redis_key, genre_id=genre_id)
     try:
