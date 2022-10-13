@@ -6,16 +6,19 @@ from fastapi import Query
 class PaginateModel:
     def __init__(
         self,
-        page_size: Optional[int] = Query(default=50,
-                                         ge=1, # greater than or equal
-                                         le=100, # less than or equal
-                                         alias='page[size]',
-                                         description='Items amount on page.'),
-
-        page_number: Optional[int] = Query(default=1,
-                                           ge=1, # greater than or equal
-                                           alias='page[number]',
-                                           description='Page number for pagination.'),
+        page_size: Optional[int] = Query(
+            default=50,
+            ge=1,  # greater than or equal
+            le=100,  # less than or equal
+            alias='page[size]',
+            description='Items amount on page.',
+        ),
+        page_number: Optional[int] = Query(
+            default=1,
+            ge=1,  # greater than or equal
+            alias='page[number]',
+            description='Page number for pagination.',
+        ),
     ):
         self.page_number = page_number
         self.page_size = page_size

@@ -26,9 +26,11 @@ class UUIDNameMixin(UUIDMixin):
 
 
 class Film(UUIDMixin):
-    """подробная информация о фильме
-       /api/v1/films/<uuid:UUID>/
     """
+        подробная информация о фильме
+        /api/v1/films/<uuid:UUID>/
+    """
+
     title: str
     description: Optional[str] = ''
     imdb_rating: Optional[float] = Field(default=0.0, example=88.41)
@@ -49,6 +51,7 @@ class FilmShort(UUIDMixin):
        Жанр и популярные фильмы в нём. Это просто фильтрация.
        /api/v1/films?sort=-imdb_rating&filter[genre]=<comedy-uuid>
     """
+
     title: str
     imdb_rating: Optional[float] = Field(default=0.0, example=88.41)
 
@@ -73,13 +76,16 @@ class ByRoles(BaseOrjsonModel):
 class Person(UUIDMixin, ByRoles):
     full_name: str
 
+
 class Persons(BaseOrjsonModel):
     results: List[Person] = []
+
 
 class Genre(UUIDNameMixin):
     """Данные по конкретному жанру.
        /api/v1/genres/<uuid:UUID>/ 
     """
+
 
 class AllGenres(BaseOrjsonModel):
     results: List[Genre] = []
@@ -90,4 +96,5 @@ class GenrePopularFilms(Genre):
         Популярные фильмы в жанре.
         /api/v1/films...
     """
+
     top_films: List[FilmShort]

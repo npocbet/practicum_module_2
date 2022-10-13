@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Dict, Optional
 import json
 from aioredis import Redis
-from elasticsearch import AsyncElasticsearch, NotFoundError
+from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 
 from db.elastic import get_elastic
@@ -21,7 +21,7 @@ class FilmService:
         film = await self._film_from_cache(redis_key)
         if not film:
             # Если фильма нет в кеше, то ищем его в Elasticsearch
-            #film = await self._get_film_from_elastic(film_id)
+            # film = await self._get_film_from_elastic(film_id)
             film = await self._get_movie_by_id(film_id)
             if not film:
                 # Если он отсутствует в Elasticsearch, значит, фильма вообще нет в базе
@@ -30,9 +30,11 @@ class FilmService:
             await self._put_result_to_cache(redis_key, film)
         return film
 
-    async def get_paginated_movies(self, redis_key, offset=0, limit=10, filter_by=None, sort=None):
+    async def get_paginated_movies(
+        self, redis_key, offset=0, limit=10, filter_by=None, sort=None
+    ):
         film = await self._film_from_cache(redis_key)
-        if film is None: 
+        if film is None:
             film = await self._get_movies_from_elastic(offset, limit, filter_by, sort)
             if film is None:
                 return None
@@ -42,7 +44,9 @@ class FilmService:
     async def get_top_films_by_genre_id(self, redis_key, genre_id, pagination):
         films = await self._film_from_cache(redis_key)
         if films is None:
-            films = await self._get_films_by_genre_id_from_elastic(genre_id, pagination.offset, pagination.limit)
+            films = await self._get_films_by_genre_id_from_elastic(
+                genre_id, pagination.offset, pagination.limit
+            )
             if films is None:
                 return None
             await self._put_result_to_cache(redis_key, films)
@@ -51,95 +55,85 @@ class FilmService:
     async def get_items_by_query(self, redis_key, query, pagination):
         films = await self._film_from_cache(redis_key)
         if films is None:
-            films = await self._get_films_by_search_query_elastic(query, pagination.offset, pagination.limit)
+            films = await self._get_films_by_search_query_elastic(
+                query, pagination.offset, pagination.limit
+            )
             if films is None:
                 return None
             await self._put_result_to_cache(redis_key, films)
         return films
 
-    async def _get_films_by_search_query_elastic(self,
-                                                 query: str,
-                                                 offset: int = 0,
-                                                 limit: int = 10,
-                                                 filter_by: Dict = None,
-                                                 sort: Dict = None):
+    async def _get_films_by_search_query_elastic(
+        self,
+        query: str,
+        offset: int = 0,
+        limit: int = 10,
+        filter_by: Dict = None,
+        sort: Dict = None,
+    ):
         if filter_by is None:
-            default_fields_list = ["title", "description", "writers_names", "actors_names", "director"]
+            default_fields_list = [
+                'title',
+                'description',
+                'writers_names',
+                'actors_names',
+                'director',
+            ]
             query_body = {
-                "query": {
-                    "query_string": {
-                        "fields": default_fields_list,
-                        "query": query
-                    },
-                },
+                'query': {'query_string': {'fields': default_fields_list, 'query': query},},
             }
-            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            result = await self.elastic.search(
+                index='movies', body=query_body, from_=offset, size=limit
+            )
             if len(result['hits']['hits']) == 0:
                 return None
         return result
 
     async def _get_movie_by_id(self, film_id: str):
-        query_body = {
-            "query": {
-                "match": {
-                    "id": film_id
-                }
-            }
-        }
-        result = await self.elastic.search(index="movies", body=query_body)
+        query_body = {'query': {'match': {'id': film_id}}}
+        result = await self.elastic.search(index='movies', body=query_body)
         try:
             film = result['hits']['hits'][0]
         except IndexError:
             return None
         return result
 
-    async def _get_films_by_genre_id_from_elastic(self, genre_id, offset=0, limit=15, filter_by=None, sort=None):
-        sort = {"imdb_rating": "desc"}
-        query_body = {
-            "query": {
-                "match": {
-                    "genre": genre_id
-                    }
-                },
-            "sort": [sort]
-        }
-        result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+    async def _get_films_by_genre_id_from_elastic(
+        self, genre_id, offset=0, limit=15, filter_by=None, sort=None
+    ):
+        sort = {'imdb_rating': 'desc'}
+        query_body = {'query': {'match': {'genre': genre_id}}, 'sort': [sort]}
+        result = await self.elastic.search(
+            index='movies', body=query_body, from_=offset, size=limit
+        )
         if len(result['hits']['hits']) == 0:
             return None
         return result
 
-    async def _get_movies_from_elastic(self,
-                                       offset: int = 0,
-                                       limit: int = 10,
-                                       filter_by: Dict = None,
-                                       sort: Dict = None):
+    async def _get_movies_from_elastic(
+        self, offset: int = 0, limit: int = 10, filter_by: Dict = None, sort: Dict = None
+    ):
 
         if sort is None:
-            sort = {"imdb_rating": "desc"}
+            sort = {'imdb_rating': 'desc'}
 
         if filter_by is None:
             query_body = {
-                "query": {
-                    "match_all": {},
-                },
-                "sort": [sort],
+                'query': {'match_all': {},},
+                'sort': [sort],
             }
-            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            result = await self.elastic.search(
+                index='movies', body=query_body, from_=offset, size=limit
+            )
             return result
         else:
             query_body = {
-                "query": {
-                    "bool": {
-                        "filter": {
-                            "match": {
-                                **filter_by
-                            }
-                        }
-                    }
-                },
-                "sort": [sort],
+                'query': {'bool': {'filter': {'match': {**filter_by}}}},
+                'sort': [sort],
             }
-            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            result = await self.elastic.search(
+                index='movies', body=query_body, from_=offset, size=limit
+            )
 
             return result
 
@@ -165,13 +159,14 @@ class FilmService:
             except Exception as e:
                 print('exep', e)
 
-# get_film_service — это провайдер FilmService. 
+
+# get_film_service — это провайдер FilmService.
 # С помощью Depends он сообщает, что ему необходимы Redis и Elasticsearch
 # Для их получения вы ранее создали функции-провайдеры в модуле db
 # Используем lru_cache-декоратор, чтобы создать объект сервиса в едином экземпляре (синглтона)
 @lru_cache()
 def get_film_service(
-        redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+    redis: Redis = Depends(get_redis),
+    elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> FilmService:
     return FilmService(redis, elastic)

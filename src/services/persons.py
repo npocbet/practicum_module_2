@@ -24,10 +24,16 @@ class PersonService:
         result['full_name'] = await self._get_person_full_name_by_id(person_id)
         if result['full_name'] is None:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
-        types = [('director', 'director'), ('actors_names', 'actor'), ('writers_names', 'writer')]
+        types = [
+            ('director', 'director'),
+            ('actors_names', 'actor'),
+            ('writers_names', 'writer'),
+        ]
         result['roles'] = dict()
         for t in types:
-            result['roles'][t[1]] = await self._get_films_by_person_full_name(type=t[0], person_name=result['full_name'])
+            result['roles'][t[1]] = await self._get_films_by_person_full_name(
+                type=t[0], person_name=result['full_name']
+            )
         await self._put_result_to_cache(redis_key, result)
         return result
 
@@ -36,7 +42,9 @@ class PersonService:
         films = await self._person_from_cache(redis_key)
         if films is not None:
             return films
-        persons = await self._get_persons_by_search_query_elastic(query, pagination.offset, pagination.limit)
+        persons = await self._get_persons_by_search_query_elastic(
+            query, pagination.offset, pagination.limit
+        )
         if persons is None:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
         persons = [i['_source']['full_name'] for i in persons]
@@ -47,17 +55,25 @@ class PersonService:
             result = dict()
             result['id'] = '86f1f44b-39f5-41a6-8b3b-af5a9ed09858'
             result['full_name'] = person
-            types = [('director', 'director'), ('actors_names', 'actor'), ('writers_names', 'writer')]
+            types = [
+                ('director', 'director'),
+                ('actors_names', 'actor'),
+                ('writers_names', 'writer'),
+            ]
             result['roles'] = dict()
             for t in types:
-                result['roles'][t[1]] = await self._get_films_by_person_full_name(type=t[0], person_name=result['full_name'])
+                result['roles'][t[1]] = await self._get_films_by_person_full_name(
+                    type=t[0], person_name=result['full_name']
+                )
 
             person = Person(**result)
             results.append(person)
         await self._put_result_to_cache(redis_key, results)
         return results
 
-    async def get_films_by_person_id(self, redis_key, offset=0, limit=10, person_id=None, sort=None):
+    async def get_films_by_person_id(
+        self, redis_key, offset=0, limit=10, person_id=None, sort=None
+    ):
         films = await self._person_from_cache(redis_key)
         if films is not None:
             return films
@@ -74,29 +90,17 @@ class PersonService:
         return roles
 
     async def _get_person_full_name_by_id(self, person_id: str):
-        query_body = {
-            "query": {
-                "match": {
-                    'id': person_id
-                }
-            }
-        }
-        result = await self.elastic.search(index="persons", body=query_body)
+        query_body = {'query': {'match': {'id': person_id}}}
+        result = await self.elastic.search(index='persons', body=query_body)
         try:
             return result['hits']['hits'][0]['_source']['full_name']
         except IndexError:
             return None
 
     async def _get_films_by_person_full_name(self, type, person_name: str):
-        query_body = {
-            "query": {
-                "match_phrase": {
-                    type: person_name
-                }
-            }
-        }
+        query_body = {'query': {'match_phrase': {type: person_name}}}
         try:
-            result = await self.elastic.search(index="movies", body=query_body)
+            result = await self.elastic.search(index='movies', body=query_body)
 
             if len(result['hits']['hits']) > 0:
                 return [i['_id'] for i in result['hits']['hits']]
@@ -105,56 +109,43 @@ class PersonService:
         except Exception:
             return None
 
-    async def _get_movies_from_elastic(self,
-                                       offset: int = 0,
-                                       limit: int = 10,
-                                       filter_by: Dict = None,
-                                       sort: Dict = None):
+    async def _get_movies_from_elastic(
+        self, offset: int = 0, limit: int = 10, filter_by: Dict = None, sort: Dict = None
+    ):
 
         if sort is None:
-            sort = {"imdb_rating": "desc"}
+            sort = {'imdb_rating': 'desc'}
 
         if filter_by is None:
             query_body = {
-                "query": {
-                    "match_all": {},
-                },
-                "sort": {**sort},
+                'query': {'match_all': {},},
+                'sort': {**sort},
             }
-            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            result = await self.elastic.search(
+                index='movies', body=query_body, from_=offset, size=limit
+            )
             return result
         else:
             query_body = {
-                "query": {
-                    "bool": {
-                        "filter": {
-                            "match": {
-                                **filter_by
-                            }
-                        }
-                    }
-                },
-                "sort": {**sort},
+                'query': {'bool': {'filter': {'match': {**filter_by}}}},
+                'sort': {**sort},
             }
-            result = await self.elastic.search(index="movies", body=query_body, from_=offset, size=limit)
+            result = await self.elastic.search(
+                index='movies', body=query_body, from_=offset, size=limit
+            )
 
             return result
 
-    async def _get_persons_by_search_query_elastic(self,
-                                                   query: str,
-                                                   offset: int = 0,
-                                                   limit: int = 10,
-                                                   ):
+    async def _get_persons_by_search_query_elastic(
+        self, query: str, offset: int = 0, limit: int = 10,
+    ):
 
         query_body = {
-            "query": {
-                "query_string": {
-                    "default_field": 'full_name',
-                    "query": query
-                },
-            },
+            'query': {'query_string': {'default_field': 'full_name', 'query': query},},
         }
-        result = await self.elastic.search(index="persons", body=query_body, from_=offset, size=limit)
+        result = await self.elastic.search(
+            index='persons', body=query_body, from_=offset, size=limit
+        )
 
         if len(result['hits']['hits']) == 0:
             return None
@@ -185,7 +176,7 @@ class PersonService:
 
 @lru_cache()
 def get_persons_service(
-        redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+    redis: Redis = Depends(get_redis),
+    elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> PersonService:
     return PersonService(redis, elastic)

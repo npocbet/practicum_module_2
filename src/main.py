@@ -22,7 +22,9 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    redis.redis = await aioredis.create_redis_pool((config.REDIS_HOST, config.REDIS_PORT), minsize=10, maxsize=20)
+    redis.redis = await aioredis.create_redis_pool(
+        (config.REDIS_HOST, config.REDIS_PORT), minsize=10, maxsize=20
+    )
     elastic.es = AsyncElasticsearch(hosts=[f'{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
 
 
@@ -33,7 +35,7 @@ async def shutdown():
     await elastic.es.close()
 
 
-app.include_router(api_router, prefix="/api", tags=['v1'])
+app.include_router(api_router, prefix='/api', tags=['v1'])
 
 if __name__ == '__main__':
     # Приложение может запускаться командой
@@ -41,9 +43,5 @@ if __name__ == '__main__':
     # но чтобы не терять возможность использовать дебагер,
     # запустим uvicorn сервер через python
     uvicorn.run(
-        'main:app',
-        host='0.0.0.0',
-        port=8000,
-        log_config=LOGGING,
-        log_level=logging.DEBUG,
+        'main:app', host='0.0.0.0', port=8000, log_config=LOGGING, log_level=logging.DEBUG,
     )
