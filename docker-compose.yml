@@ -27,6 +27,12 @@ services:
       - http.max_content_length=500mb
       - xpack.security.enabled=false
     depends_on:
+      - es01
+    networks:
+      internal:
+  redis01:
+    image: redislabs/rejson:2.2.0
+    depends_on:
       - db
     networks:
       internal:
