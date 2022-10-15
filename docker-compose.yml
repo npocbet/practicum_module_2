@@ -13,13 +13,9 @@ services:
     networks:
       internal:
   db:
-    image: postgres:14.5-alpine
+    image: postgres:13
     volumes:
-      - ./docker-volumes/:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=&{DB_PASSWORD}
-      - POSTGRES_DB=&{DB_NAME}
+      - ./pg_data/data:/var/lib/postgresql/data/
     networks:
       internal:
   es01:
@@ -30,6 +26,12 @@ services:
       - http.compression=true
       - http.max_content_length=500mb
       - xpack.security.enabled=false
+    depends_on:
+      - es01
+    networks:
+      internal:
+  redis01:
+    image: redislabs/rejson:2.2.0
     depends_on:
       - db
     networks:
