@@ -11,21 +11,16 @@ from core import config
 from core.logger import LOGGING
 from db import elastic, redis
 
+settings = config.Settings()
 
-app = FastAPI(
-    title=config.PROJECT_NAME,
-    docs_url='/api/openapi',
-    openapi_url='/api/openapi.json',
-    default_response_class=ORJSONResponse,
-)
-
+app = FastAPI(**settings.fastapi_kwargs)
 
 @app.on_event('startup')
 async def startup():
     redis.redis = await aioredis.create_redis_pool(
-        (config.REDIS_HOST, config.REDIS_PORT), minsize=10, maxsize=20
+        (settings.REDIS_HOST, settings.REDIS_PORT), minsize=10, maxsize=20
     )
-    elastic.es = AsyncElasticsearch(hosts=[f'{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
+    elastic.es = AsyncElasticsearch(hosts=[f'{settings.ELASTIC_HOST}:{settings.ELADTIC_PORT}'])
 
 
 @app.on_event('shutdown')
