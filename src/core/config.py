@@ -1,10 +1,11 @@
-from dataclasses import Field
 import os
-from logging import config as logging_config
-from fastapi.responses import ORJSONResponse
 
+from logging import config as logging_config
+from typing import List, Dict, Any
+from fastapi.responses import ORJSONResponse
 from core.logger import LOGGING
-from pydantic import BaseSettings, RedisDsn
+from pydantic import BaseSettings, RedisDsn, Field
+
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
 
