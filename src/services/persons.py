@@ -48,8 +48,6 @@ class PersonService:
         if persons is None:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
         persons = [i['_source']['full_name'] for i in persons]
-        with open('log.json', mode='w') as f:
-            f.write(json.dumps(persons))
         results = []
         for person in persons:
             result = dict()

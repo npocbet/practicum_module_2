@@ -4,8 +4,9 @@ from pydantic import BaseSettings, Field
 
 
 class TestSettings(BaseSettings):
-    es_host: str = Field('http://127.0.0.1:9200', env='ELASTIC_HOST')
-    redis_host: str = Field('http://127.0.0.1:6379', env='REDIS_HOST')
+    es_host_url: str = Field('http://127.0.0.1:9200', env='ELASTIC_HOST')
+    redis_host: str = Field('127.0.0.1', env='REDIS_HOST')
+    redis_port: str = Field('6379', env='REDIS_PORT')
     service_url: str = Field('http://127.0.0.1:8106', env='SERVICE_HOST')
 
 
@@ -30,7 +31,7 @@ class TestSettingsFilms(TestSettings):
             {'id': '444', 'name': 'Howard'}
         ],
     } for _ in range(60)]
-    api_uri = '/api/v1/films/search/'
+    api_uri = '/api/v1/films'
     query_data = {'query': 'Baaaazzzzziiiinga'}
 
 
@@ -41,7 +42,7 @@ class TestSettingsPersons(TestSettings):
         'id': str(uuid.uuid4()),
         'full_name': 'Lysiy iz brazzers',
     } for _ in range(60)]
-    api_uri = '/api/v1/persons/search/'
+    api_uri = '/api/v1/persons'
     query_data = {'query': 'Lysiy iz brazzers'}
 
 
