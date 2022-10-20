@@ -1,6 +1,7 @@
 import json
-from tests.functional.settings import test_settings_films, test_settings_persons
 import pytest
+from tests.functional.settings import test_settings_films, test_settings_persons
+
 
 
 #  Название теста должно начинаться со слова `test_`
