@@ -23,12 +23,12 @@ class TestSettingsFilms(TestSettings):
         'actors_names': ['Ann', 'Bob'],
         'writers_names': ['Ben', 'Howard'],
         'actors': [
-            {'id': '111', 'name': 'Ann'},
-            {'id': '222', 'name': 'Bob'}
+            {'id': str(uuid.uuid4()), 'name': 'Ann'},
+            {'id': str(uuid.uuid4()), 'name': 'Bob'}
         ],
         'writers': [
-            {'id': '333', 'name': 'Ben'},
-            {'id': '444', 'name': 'Howard'}
+            {'id': str(uuid.uuid4()), 'name': 'Ben'},
+            {'id': str(uuid.uuid4()), 'name': 'Howard'}
         ],
     } for _ in range(60)]
     api_uri = '/api/v1/films'
@@ -49,6 +49,11 @@ class TestSettingsPersons(TestSettings):
 class TestSettingsGenres(TestSettings):
     es_index: str = 'genres'
     es_id_field: str = 'id'
+    es_data = [{
+        'id': str(uuid.uuid4()),
+        'name': 'skazka',
+    } for _ in range(5)]
+    api_uri = '/api/v1/genres'
 
 
 test_settings = TestSettings()

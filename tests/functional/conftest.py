@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 
 from elasticsearch import AsyncElasticsearch
-from tests.functional.settings import test_settings, test_settings_persons, test_settings_films
+from tests.functional.settings import test_settings, test_settings_persons, test_settings_films, test_settings_genres
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +32,9 @@ async def elasticsearch_client():
     bulk_body.extend([
         '{{"delete": {{"_index": "{}", "_id": "{}"}}}}'
         .format(test_settings_persons.es_index, row['id']) for row in test_settings_persons.es_data])
+    bulk_body.extend([
+        '{{"delete": {{"_index": "{}", "_id": "{}"}}}}'
+        .format(test_settings_genres.es_index, row['id']) for row in test_settings_genres.es_data])
     await es_client.bulk('\n'.join(bulk_body))
     await es_client.close()
 

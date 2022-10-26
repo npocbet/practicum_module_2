@@ -89,4 +89,5 @@ async def test_persons_films_by_id(elasticsearch_client, session_client, redis_c
     # 5. Проверяем ответ
     assert status == 200
     assert f_es_data[p_settings.es_id_field] in (i['id'] for i in body['results'])
-    assert p_es_data["id"] in list((i['id'] for i in redis_response[0]['_source']['actors']))
+    film = list(filter(lambda x: x['_id'] == f_es_data['id'], redis_response))
+    assert p_es_data["id"] in list((i['id'] for i in film[0]['_source']['actors']))
