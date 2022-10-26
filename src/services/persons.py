@@ -40,6 +40,7 @@ class PersonService:
     # http://localhost:8106/api/v1/persons/search/?query=Mary&page[number]=1&page[size]=50
     async def search_person_by_query(self, redis_key, query, pagination):
         films = await self._person_from_cache(redis_key)
+
         if films is not None:
             return films
         persons = await self._get_persons_by_search_query_elastic(
@@ -63,14 +64,14 @@ class PersonService:
                 result['roles'][t[1]] = await self._get_films_by_person_full_name(
                     type=t[0], person_name=result['full_name']
                 )
+            results.append(result)
 
-            person = Person(**result)
-            results.append(person)
         await self._put_result_to_cache(redis_key, results)
+
         return results
 
     async def get_films_by_person_id(
-        self, redis_key, offset=0, limit=10, person_id=None, sort=None
+            self, redis_key, offset=0, limit=10, person_id=None, sort=None
     ):
         films = await self._person_from_cache(redis_key)
         if films is not None:
@@ -108,7 +109,7 @@ class PersonService:
             return None
 
     async def _get_movies_from_elastic(
-        self, offset: int = 0, limit: int = 10, filter_by: Dict = None, sort: Dict = None
+            self, offset: int = 0, limit: int = 10, filter_by: Dict = None, sort: Dict = None
     ):
 
         if sort is None:
@@ -116,7 +117,7 @@ class PersonService:
 
         if filter_by is None:
             query_body = {
-                'query': {'match_all': {},},
+                'query': {'match_all': {}, },
                 'sort': {**sort},
             }
             result = await self.elastic.search(
@@ -135,11 +136,11 @@ class PersonService:
             return result
 
     async def _get_persons_by_search_query_elastic(
-        self, query: str, offset: int = 0, limit: int = 10,
+            self, query: str, offset: int = 0, limit: int = 10,
     ):
 
         query_body = {
-            'query': {'query_string': {'default_field': 'full_name', 'query': query},},
+            'query': {'query_string': {'default_field': 'full_name', 'query': query}, },
         }
         result = await self.elastic.search(
             index='persons', body=query_body, from_=offset, size=limit
@@ -174,7 +175,7 @@ class PersonService:
 
 @lru_cache()
 def get_persons_service(
-    redis: Redis = Depends(get_redis),
-    elastic: AsyncElasticsearch = Depends(get_elastic),
+        redis: Redis = Depends(get_redis),
+        elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> PersonService:
     return PersonService(redis, elastic)

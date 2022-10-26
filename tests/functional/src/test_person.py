@@ -2,10 +2,11 @@ import json
 import pytest
 
 from tests.functional.settings import test_settings_persons, test_settings_films
+from ..utils.helpers import _get_from_redis_cache, _put_result_to_redis_cache
 
 
 @pytest.mark.asyncio
-async def test_persons_id(elasticsearch_client, session_client):
+async def test_persons_id(elasticsearch_client, session_client, redis_client):
     # 1. Генерируем данные для ES
     settings = test_settings_persons
     es_data = settings.es_data[-1]
@@ -31,13 +32,20 @@ async def test_persons_id(elasticsearch_client, session_client):
         body = await response.json()
         status = response.status
 
-    # 4. Проверяем ответ
+    # 4. Загружаем кэш из Redis
+
+    redis_key = f'api/v1/persons/{str(es_data[settings.es_id_field])}'
+
+    redis_response = await _get_from_redis_cache(redis_client, redis_key)
+
+    # 5. Проверяем ответ
     assert status == 200
     assert body['id'] == es_data[settings.es_id_field]
+    assert redis_response['id'] == es_data[settings.es_id_field]
 
 
 @pytest.mark.asyncio
-async def test_persons_films_by_id(elasticsearch_client, session_client):
+async def test_persons_films_by_id(elasticsearch_client, session_client, redis_client):
     # 1. Генерируем данные для ES
     p_settings = test_settings_persons
     p_es_data = p_settings.es_data[-2]
@@ -72,6 +80,13 @@ async def test_persons_films_by_id(elasticsearch_client, session_client):
         body = await response.json()
         status = response.status
 
-    # 4. Проверяем ответ
+    # 4. Загружаем кэш из Redis
+
+    redis_key = f'api/v1/persons/{str(p_es_data["id"])}/film/'
+
+    redis_response = await _get_from_redis_cache(redis_client, redis_key)
+
+    # 5. Проверяем ответ
     assert status == 200
     assert f_es_data[p_settings.es_id_field] in (i['id'] for i in body['results'])
+    assert p_es_data["id"] in list((i['id'] for i in redis_response[0]['_source']['actors']))
