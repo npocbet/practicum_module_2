@@ -5,7 +5,7 @@ networks:
     driver: bridge
 services:
   app:
-    build: AsyncApi
+    build: .
     ports:
       - "8106:8106"
     depends_on:
@@ -27,7 +27,7 @@ services:
       - http.max_content_length=500mb
       - xpack.security.enabled=false
     depends_on:
-      - es01
+      - redis01
     networks:
       internal:
   redis01:
